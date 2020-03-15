@@ -1,0 +1,219 @@
+@startuml
+
+abstract class AbstractCRUDRepository
+interface CRUDRepository
+
+ interface HasID <ID> {
+    ID getID();
+    void setID(ID id);
+}
+
+class Tema  {
+    private String idTema
+    private String descriere
+    private int deadline
+    private int startline
+
+    public Tema(String idTema, String descriere, int deadline, int startline)
+
+    String getID()
+
+    void setID(String idTema)
+
+    public String getDescriere()
+
+    public void setDescriere(String descriere)
+
+    public int getDeadline()
+
+    public void setDeadline(int deadline)
+
+    public int getStartline()
+    public void setStartline(int startline)
+
+
+    public String toString()
+
+
+    public boolean equals(Object o)
+
+
+    public int hashCode()
+}
+Tema <|-- HasID
+
+class Student  {
+    private String idStudent;
+    private String nume;
+    private int grupa;
+
+    public Student(String idStudent, String nume, int grupa)
+
+    public String getID()
+
+
+    public void setID(String idStudent)
+
+    public String getNume()
+
+   void setNume(String nume)
+
+    public int getGrupa()
+
+    public void setGrupa(int grupa)
+
+
+    public String toString()
+
+
+    public boolean equals(Object o)
+
+
+    public int hashCode()
+}
+Student <|-- HasID
+
+class Pair <E, F>{
+    private E object1;
+    private F object2;
+
+    public Pair(E object1, F object2)
+
+    public E getObject1()
+
+    public F getObject2()
+
+    public boolean equals(Object o)
+
+
+    public int hashCode()
+}
+class Nota  {
+    Pair<String, String> idNota;
+    private double nota;
+    private int saptamanaPredare;
+    private String feedback;
+
+    public Nota(Pair<String, String> idNota, double nota, int saptamanaPredare, String feedback)
+
+
+    public Pair<String, String> getID()
+
+    public void setID(Pair<String, String> idNota)
+
+    public double getNota()
+
+    public void setNota(double nota)
+
+    public int getSaptamanaPredare()
+
+    public void setSaptamanaPredare(int saptamanaPredare)
+
+    public String getFeedback()
+
+    public void setFeedback(String feedback)
+
+
+    public String toString()
+}
+Nota <-- HasID
+HasID <-- Pair
+interface CRUDRepository<ID, E> {
+
+    E findOne(ID id);
+
+    Iterable<E> findAll();
+
+    E save(E entity) throws ValidationException;
+    E delete(ID id);
+
+    E update(E entity);
+}
+AbstractCRUDRepository <-- CRUDRepository
+
+abstract class AbstractCRUDRepository<ID, E extends HasID<ID>> {
+    Map<ID, E> entities;
+    Validator<E> validator;
+
+    public AbstractCRUDRepository(Validator validator)
+    public E findOne(ID id)
+
+    public Iterable<E> findAll()
+    public E save(E entity) throws ValidationException
+
+    public E delete(ID id)
+
+
+    public E update(E entity)
+}
+
+class StudentRepository {
+    public StudentRepository(Validator<Student> validator)
+}
+StudentRepository <|-- AbstractCRUDRepository
+class TemaRepository {
+    public TemaRepository(Validator<Tema> validator)
+}
+TemaRepository <|-- AbstractCRUDRepository
+
+class NotaRepository {
+    public NotaRepository(Validator<Nota> validator)
+}
+NotaRepository <|-- AbstractCRUDRepository
+NotaRepository <- NotaValidator
+interface Validator<E> {
+    void validate(E entity) throws ValidationException;
+}
+
+class NotaValidator  {
+    public void validate(Nota nota) throws ValidationException
+}
+NotaValidator <|-- Validator
+
+class StudentValidator {
+    public void validate(Student student) throws ValidationException
+}
+StudentValidator <|-- Validator
+
+class TemaValidator {
+    public void validate(Tema tema) throws ValidationException
+}
+TemaValidator <|-- Validator
+TemaRepository <- TemaValidator
+StudentRepository <-StudentValidator
+
+class Service {
+    private StudentXMLRepository studentXmlRepo;
+    private TemaXMLRepository temaXmlRepo;
+    private NotaXMLRepository notaXmlRepo;
+
+    public Service(StudentXMLRepository studentXmlRepo, TemaXMLRepository temaXmlRepo, NotaXMLRepository notaXmlRepo)
+
+    public Iterable<Student> findAllStudents()
+
+    public Iterable<Tema> findAllTeme()
+
+    public Iterable<Nota> findAllNote()
+
+    public int saveStudent(String id, String nume, int grupa)
+    public int saveTema(String id, String descriere, int deadline, int startline)
+
+    public int saveNota(String idStudent, String idTema, double valNota, int predata, String feedback)
+
+    public int deleteStudent(String id)
+
+    public int deleteTema(String id)
+
+    public int updateStudent(String id, String numeNou, int grupaNoua)
+
+    public int updateTema(String id, String descriereNoua, int deadlineNou, int startlineNou)
+
+    public int extendDeadline(String id, int noWeeks)
+
+    public void createStudentFile(String idStudent, String idTema)
+}
+
+Service <- StudentRepository
+Service <- NotaRepository
+Service <- TemaRepository
+@enduml
