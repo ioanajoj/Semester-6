@@ -50,7 +50,7 @@ def test_get_orthogonal_neighbours(playgr, input, res):
     (
         Playground('E:\\UBB\\Semester 6\\Stratec\\2020_Internship_Challenge_Software\\Step_One.csv'),
         (1,2),
-        set([(0,2), (2,2), (1,1), (1,3), (0,1), (2,3), (0,3), (2,1), (1,2)])
+        set([(0,2), (2,2), (1,1), (1,3), (0,1), (2,3), (0,3), (2,1)])
     )
 ]
 )

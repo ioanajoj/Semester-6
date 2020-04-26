@@ -9,9 +9,26 @@ class Playground:
         self.center = None
         self.points_pq = []
         self.load_file(filepath)
-        
+
         self.invalid_nodes = set()
         self.paths = []
+        self.current_pp = None
+
+    def set_pp(self):
+        if self.current_pp and not self.current_pp.completed:
+            return
+        if len(self.points_pq):
+            self.current_pp = self.points_pq.pop()
+
+    def go_one_step(self):
+        if not self.current_pp:
+            return
+        if self.current_pp and self.current_pp.completed:
+            if len(self.points_pq):
+                self.current_pp = self.points_pq.pop()
+            else:
+                return
+        self.a_star_steps(self.current_pp)
 
     def find_paths(self):
         while self.points_pq:
@@ -20,45 +37,59 @@ class Playground:
             print(pin_no)
             print(pp.center_d)
             path = self.a_star(pp.X, pp.Y)
-            print(path)
-            self.paths += path
+            print('-> ' + str(path))
+            self.paths.append(path)
             for c in path:
                 self.invalid_nodes.add(c)
                 self.board[c] = pin_no
                 for n in self.get_neighbours(c):
                     self.invalid_nodes.add(n)
-            np.savetxt("result-4.csv", self.board.astype('int'), delimiter=",", fmt='%d')
+            np.savetxt("result-5.2.csv", self.board.astype('int'), delimiter=",", fmt='%d')
+
+    def get_next_valid_path(self):
+        if len(self.points_pq):
+            pp = self.points_pq.pop()
+            pp.path = self.a_star(pp)
+            self.paths.append(pp.path)
+            for c in pp.path:
+                self.invalid_nodes.add(c)
+                self.board[c] = pp.value
+                for n in self.get_neighbours(c):
+                    self.invalid_nodes.add(n)
 
     def load_file(self, filepath):
         self.board = np.genfromtxt(filepath, delimiter=',', dtype='int')
         self.center = (self.board.shape[0] // 2, self.board.shape[1] // 2)
         # load coordinates of non zero values
         coordinates = np.argwhere(self.board)
-        func = lambda row: self.board[row[0],row[1]]
         # sort by value at coordinates
-        coordinates = coordinates[np.argsort(np.apply_along_axis(func, 1, coordinates))]
+        coordinates = coordinates[
+            np.argsort(np.apply_along_axis(
+                lambda row: self.board[row[0], row[1]],
+                1,
+                coordinates))
+        ]
 
-        for pair in zip(*[iter(coordinates)]*2):
-            self.points_pq.append(PointPair(pair[0], pair[1], self.center))
+        for pair in zip(*[iter(coordinates)] * 2):
+            self.points_pq.append(PointPair(pair[0], pair[1], self.board[pair[0][0], pair[0][1]], self.center))
         self.points_pq.sort()
 
     def get_neighbours(self, X):
-        arr = np.array([X[0], X[1]])
-        vert = [X[0], X[0]-1, X[0]+1]
-        horz = [X[1], X[1]-1, X[1]+1]
+        vert = [X[0], X[0] - 1, X[0] + 1]
+        horz = [X[1], X[1] - 1, X[1] + 1]
         steps = []
         for point in itertools.product(vert, horz):
             if not np.any(np.array(point) < 0) \
-                and not np.any(np.array(point) >= self.board.shape):
+                    and not np.any(np.array(point) >= self.board.shape):
                 steps.append(point)
         return steps
 
     def get_orthogonal_neighbours(self, X):
         ns = [
-            point for point in 
+            point for point in
             [(X[0] - 1, X[1]), (X[0] + 1, X[1]), (X[0], X[1] - 1), (X[0], X[1] + 1)]
             if not np.any(np.array(point) < 0) \
-                and not np.any(np.array(point) >= self.board.shape)
+               and not np.any(np.array(point) >= self.board.shape)
         ]
         return ns
 
@@ -89,9 +120,8 @@ class Playground:
         return True
 
     def next_steps(self, X, Y, path, tried_pins):
-        arr = np.array([X[0], X[1]])
-        vert = [X[0], X[0]-1, X[0]+1]
-        horz = [X[1], X[1]-1, X[1]+1]
+        vert = [X[0], X[0] - 1, X[0] + 1]
+        horz = [X[1], X[1] - 1, X[1] + 1]
         steps = []
         for point in itertools.product(vert, horz):
             if self.is_valid(point, path, tried_pins) and not np.array_equal(point, X):
@@ -99,35 +129,86 @@ class Playground:
                 new_path.append(point)
                 steps.append(Step(point, X, Y, new_path, self.center))
         return steps
-        
-    def a_star(self, X, Y):
-        pq = PriorityQueue()
-        if distance(self.center, X) > distance(self.center, Y):
-            X, Y = Y, X
-        path = [(X[0], X[1])]
-        tried_pins = set()
-        while not np.array_equal(X, Y):
-            tried_pins.add((X[0], X[1]))
-            further_steps = self.next_steps(X, Y, path, tried_pins)
-            # if not further_steps:
-            #     break
-            for step in further_steps:
-                pq.put(step)
-            if pq.qsize() == 0:
-                break
-            step = pq.get()
-            X = step.coords
-            path = step.path[:]
-        return path
 
-    
+    def a_star(self, pp):
+        while not pp.completed:
+            self.a_star_steps(pp)
+            # pp.tried_pins.add((pp.X[0], pp.X[1]))
+            # further_steps = self.next_steps(pp.current_x, pp.Y, pp.path, pp.tried_pins)
+            # for step in further_steps:
+            #     pp.pq.put(step)
+            # if pp.pq.qsize() == 0:
+            #     break
+            # step = pp.pq.get()
+            # pp.current_x = step.coords
+            # pp.path = step.path[:]
+            # if np.array_equal(pp.current_x, pp.Y):
+            #     pp.completed = True
+            # print(path)
+            # self.save_board(path)
+        return pp.path
+
+    def update_playground(self, path, value):
+        self.paths.append(path)
+        for c in path:
+            self.invalid_nodes.add(c)
+            self.board[c] = value
+            for n in self.get_neighbours(c):
+                self.invalid_nodes.add(n)
+
+    def a_star_steps(self, pp):
+        self.a_star_step(pp, 0)
+        self.a_star_step(pp, 1)
+        if pp.completed:
+            return
+        x_limit = pp.path[0][-1]
+        y_limit = pp.path[1][-1]
+        if distance(np.array(x_limit), np.array(y_limit)) == 2:
+            if x_limit[0] == y_limit[0]:
+                pp.final_path = pp.path[0] + [(x_limit[0], x_limit[0] + 1), (x_limit[0], x_limit[0] + 2)] + pp.path[1]
+                pp.completed = True
+                self.update_playground(pp.final_path, pp.value)
+            elif x_limit[1] == y_limit[1]:
+                pp.final_path = pp.path[0] + [((x_limit[0] + y_limit[0]) // 2, x_limit[1])] + pp.path[1]
+                pp.completed = True
+                self.update_playground(pp.final_path, pp.value)
+        neighbours = self.get_neighbours(pp.path[0][-1])
+        if pp.path[1][-1] in neighbours:
+            pp.final_path = pp.path[0] + pp.path[1][::-1]
+            pp.completed = True
+            self.update_playground(pp.final_path, pp.value)
+
+    def a_star_step(self, pp, index):
+        if np.array_equal(pp.current_x[index], pp.limits[(index + 1) % 2]):
+            return
+        pp.tried_pins[index].add((pp.current_x[index][0], pp.current_x[index][1]))
+        further_steps = self.next_steps(pp.current_x[index], pp.limits[(index + 1) % 2], pp.path[index], pp.tried_pins[index])
+        for step in further_steps:
+            pp.pq[index].put(step)
+        if pp.pq[index].qsize() == 0:
+            pp.completed = True
+            pp.final_path = [(pp.X[0], pp.X[1]), (pp.Y[0], pp.Y[1])]
+            return
+        step = pp.pq[index].get()
+        pp.current_x[index] = step.coords
+        pp.path[index] = step.path[:]
+        if np.array_equal(pp.current_x[index], pp.limits[(index + 1) % 2]):
+            pp.completed = True
+            pp.final_path = pp.path[index][:]
+            self.update_playground(pp.path[index], pp.value)
+
+
 class Step:
     def __init__(self, coords, X, Y, path, board_center):
         self.coords = coords
         self.prev = X
         self.path = path
         self.dist = distance(np.array(X), np.array(coords))
-        self.combined_dist = 0.40 * distance(np.array(coords), np.array(Y)) + 0.30 * distance(np.array(coords), np.array(X)) + 0.30 * distance(np.array(coords), np.array([board_center[0], board_center[1]]))
+        self.combined_dist = (
+                distance(np.array(coords), np.array(Y))
+                + distance(np.array(coords), np.array(X))
+            # - 0.75 * distance(np.array(coords), np.array([board_center[0], board_center[1]]))
+        )
 
     def __str__(self):
         return f'({self.coords[0]}, {self.coords[1]}), dist: {self.dist}, combined_dist: {self.combined_dist}'
@@ -140,30 +221,49 @@ class Step:
 
 
 class PointPair:
-    def __init__(self, X, Y, board_center):
+    def __init__(self, X, Y, value, board_center):
         self.X = X
         self.Y = Y
+        self.limits = [X, Y]
+        self.value = value
         self.d = distance(X, Y)
-        self.center_d = min(distance(X, np.array([board_center[0], board_center[1]])), 
-                        distance(Y, np.array([board_center[0], board_center[1]])))
-    
+        self.center_d = (distance(X, np.array([board_center[0], board_center[1]])) +
+                         distance(Y, np.array([board_center[0], board_center[1]]))) / 2
+        self.path = [[(X[0], X[1])], [(Y[0], Y[1])]]
+        self.pq = [PriorityQueue(), PriorityQueue()]
+        self.current_x = [X, Y]
+        self.tried_pins = [set(), set()]
+        self.completed = False
+
     def __lt__(self, other):
-        return self.center_d + self.d > other.center_d + other.d
-        #  and self.d > other.d
-    
+        """
+        Prioritize the selection of pairs of points
+        """
+        return self.d > other.d
+        # return self.d - 0.15 * self.center_d > other.d - 0.15 * other.center_d
+        # other.center_d + 
+        # and self.d > other.d
+
 
 def distance(v1, v2):
     return np.sqrt(np.sum((v1 - v2) ** 2))
 
 
-if __name__ == '__main__':
+def print_pretty_table(board, paths):
+    from prettytable import PrettyTable
+    x = PrettyTable()
+    x.field_names = [' '] + [i for i in range(board.shape[1])]
+    for row in range(board.shape[0]):
+        x.add_row([row] + [board[row, i] if board[row, i] != 0 else ' ' for i in range(board.shape[1])])
+    print(x)
 
-    filepath = 'E:\\UBB\\Semester 6\\Stratec\\2020_Internship_Challenge_Software\\Step_Two-Z.csv'
+
+if __name__ == '__main__':
+    filepath = 'E:\\UBB\\Semester 6\\Stratec\\2020_Internship_Challenge_Software\\Step_One-2.csv'
 
     playground = Playground(filepath)
     playground.find_paths()
 
     print('Finished')
 
-    from printing_tools import print_pretty_table
     print_pretty_table(playground.board, playground.paths)
