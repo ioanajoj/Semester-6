@@ -5,8 +5,7 @@ from PyQt5.QtGui import QColor, QBrush
 from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow, QLabel, QGridLayout, QTableWidget, QTableWidgetItem, \
     QHeaderView, QPushButton, QVBoxLayout, QHBoxLayout
 
-from brute_force.main import Playground
-from brute_force.printing_tools import print_pretty_table
+from brute_force.domain import Playground
 
 
 class MainWindow(QMainWindow):
@@ -29,13 +28,9 @@ class MainWindow(QMainWindow):
         # buttons layout
         # next path button
         horizontal_layout = QHBoxLayout()
-        self.next_button = QPushButton(text='Next path')
-        self.next_button.clicked.connect(self.next_button_clicked)
-        horizontal_layout.addWidget(self.next_button)
-        # next point pair button
-        self.next_point_pair_button = QPushButton(text='Next pair of points')
-        self.next_point_pair_button.clicked.connect(self.next_point_pair_button_clicked)
-        horizontal_layout.addWidget(self.next_point_pair_button)
+        self.complete_path_button = QPushButton(text='Next path')
+        self.complete_path_button.clicked.connect(self.complete_path_button_clicked)
+        horizontal_layout.addWidget(self.complete_path_button)
         # next step for current path
         self.next_step_button = QPushButton(text='Next step on current path')
         self.next_step_button.clicked.connect(self.next_step_button_clicked)
@@ -56,22 +51,21 @@ class MainWindow(QMainWindow):
         widget.setLayout(self.layout)
         self.setCentralWidget(widget)
 
-    def next_button_clicked(self):
-        print('Clicked')
-        self.table_widget.playground.set_pp()
-        self.selection_label.setText(f'Current pair of points {self.table_widget.playground.current_pp.value}')
-        self.table_widget.get_next_path()
-
-    def next_point_pair_button_clicked(self):
-        print('next_point_pair_button_clicked')
-        self.table_widget.playground.set_pp()
-        self.selection_label.setText(f'Current pair of points {self.table_widget.playground.current_pp.value}')
+    def complete_path_button_clicked(self):
+        print('complete_path_button_clicked')
+        if not self.table_widget.playground.set_pp():
+            self.selection_label.setText('Finished routing')
+        else:
+            self.selection_label.setText(f'Current pair of points {self.table_widget.playground.current_pp.value}')
+            self.table_widget.complete_path()
 
     def next_step_button_clicked(self):
         print('next_step_button_clicked')
-        self.table_widget.playground.set_pp()
-        self.selection_label.setText(f'Current pair of points {self.table_widget.playground.current_pp.value}')
-        self.table_widget.next_step()
+        if not self.table_widget.playground.set_pp():
+            self.selection_label.setText('Finished routing')
+        else:
+            self.selection_label.setText(f'Current pair of points {self.table_widget.playground.current_pp.value}')
+            self.table_widget.next_step()
 
 
 class TableWidget(QWidget):
@@ -115,16 +109,15 @@ class TableWidget(QWidget):
             self.table.setItem(pin_pair.X[0], pin_pair.X[1], item_x)
             self.table.setItem(pin_pair.Y[0], pin_pair.Y[1], item_y)
 
-    def get_next_path(self):
-        # self.playground.get_next_valid_path()
-        if len(self.playground.points_pq):
-            if not self.playground.current_pp.completed:
-                self.playground.a_star(self.playground.current_pp)
-            else:
-                pp = self.playground.points_pq.pop()
-                self.playground.current_pp = pp
-                self.playground.a_star(self.playground.current_pp)
-        self.draw_path(self.playground.paths[-1])
+    def complete_path(self):
+        if not self.playground.current_pp.completed:
+            self.clean_path(self.playground.current_pp.path[0])
+            self.clean_path(self.playground.current_pp.path[1])
+        else:
+            pp = self.playground.points_pq.pop()
+            self.playground.current_pp = pp
+        self.playground.a_star()
+        self.draw_path(self.playground.current_pp.final_path)
 
     def draw_path(self, path):
         if not path:
@@ -142,43 +135,28 @@ class TableWidget(QWidget):
 
     def clean_path(self, path):
         for coords in path:
-            self.table.item(coords[0], coords[1]).setText('')
-            self.table.item(coords[0], coords[1]).setBackground(QBrush(QColor(255, 255, 255)))
-        self.table.resizeColumnsToContents()
-        self.table.resizeRowsToContents()
-
-    def show_paths(self):
-        for path in self.playground.paths:
-            value = str(self.playground.board[path[0]])
-            for coords in path:
-                item = QTableWidgetItem(str(value))
-                item.setBackground(QBrush(QColor(235, self.green_value, 52)))
-                self.table.setItem(coords[0], coords[1], item)
-            self.green_value += 50
-            self.green_value = self.green_value % 255
-
+            if self.table.item(coords[0], coords[1]):
+                self.table.item(coords[0], coords[1]).setText('')
+                self.table.item(coords[0], coords[1]).setBackground(QBrush(QColor(255, 255, 255)))
         self.table.resizeColumnsToContents()
         self.table.resizeRowsToContents()
 
     def next_step(self):
-        if not self.playground.current_pp:
-            return
         self.clean_path(self.playground.current_pp.path[0])
         self.clean_path(self.playground.current_pp.path[1])
+        self.playground.go_one_step()
         if self.playground.current_pp.completed:
             self.draw_path(self.playground.current_pp.final_path)
-        self.playground.go_one_step()
-        self.draw_path(self.playground.current_pp.path[0])
-        self.draw_path(self.playground.current_pp.path[1])
+        else:
+            self.draw_path(self.playground.current_pp.path[0])
+            self.draw_path(self.playground.current_pp.path[1])
 
 
 if __name__ == '__main__':
-    filepath = 'E:\\UBB\\Semester 6\\Stratec\\2020_Internship_Challenge_Software\\Step_Two-Z.csv'
+    filepath = '..\\2020_Internship_Challenge_Software\\Step_Two-Z.csv'
 
     playground = Playground(filepath)
-    # playground.find_paths()
-    print('Finished')
-    print_pretty_table(playground.board, playground.paths)
+    print('Starting GUI..')
 
     app = QApplication(sys.argv)
     window = MainWindow(playground=playground)

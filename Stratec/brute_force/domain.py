@@ -2,6 +2,8 @@ import numpy as np
 from queue import PriorityQueue
 import itertools
 
+from brute_force.printing_tools import print_pretty_table, distance
+
 
 class Playground:
     def __init__(self, filepath):
@@ -16,46 +18,22 @@ class Playground:
 
     def set_pp(self):
         if self.current_pp and not self.current_pp.completed:
-            return
+            return True
         if len(self.points_pq):
             self.current_pp = self.points_pq.pop()
+            return True
+        else:
+            return False
 
     def go_one_step(self):
-        if not self.current_pp:
-            return
-        if self.current_pp and self.current_pp.completed:
-            if len(self.points_pq):
-                self.current_pp = self.points_pq.pop()
-            else:
-                return
         self.a_star_steps(self.current_pp)
 
-    def find_paths(self):
-        while self.points_pq:
-            pp = self.points_pq.pop()
-            pin_no = self.board[pp.X[0], pp.X[1]]
-            print(pin_no)
-            print(pp.center_d)
-            path = self.a_star(pp.X, pp.Y)
-            print('-> ' + str(path))
-            self.paths.append(path)
-            for c in path:
-                self.invalid_nodes.add(c)
-                self.board[c] = pin_no
-                for n in self.get_neighbours(c):
-                    self.invalid_nodes.add(n)
-            np.savetxt("result-5.2.csv", self.board.astype('int'), delimiter=",", fmt='%d')
+    def save_to_csv(self, filename):
+        np.savetxt(filename + '.csv', self.board.astype('int'), delimiter=",", fmt='%d')
 
-    def get_next_valid_path(self):
-        if len(self.points_pq):
-            pp = self.points_pq.pop()
-            pp.path = self.a_star(pp)
-            self.paths.append(pp.path)
-            for c in pp.path:
-                self.invalid_nodes.add(c)
-                self.board[c] = pp.value
-                for n in self.get_neighbours(c):
-                    self.invalid_nodes.add(n)
+    def find_paths(self):
+        while self.set_pp():
+            self.a_star()
 
     def load_file(self, filepath):
         self.board = np.genfromtxt(filepath, delimiter=',', dtype='int')
@@ -80,7 +58,8 @@ class Playground:
         steps = []
         for point in itertools.product(vert, horz):
             if not np.any(np.array(point) < 0) \
-                    and not np.any(np.array(point) >= self.board.shape):
+                    and not np.any(np.array(point) >= self.board.shape) \
+                    and not np.array_equal(point, X):
                 steps.append(point)
         return steps
 
@@ -101,7 +80,6 @@ class Playground:
         neighbours = self.get_orthogonal_neighbours(point)
         pin_counter = 0
         for n in neighbours:
-            n_value = self.board[n]
             pin_counter += self.board[n] != 0
         if pin_counter > 1:
             return False
@@ -130,24 +108,6 @@ class Playground:
                 steps.append(Step(point, X, Y, new_path, self.center))
         return steps
 
-    def a_star(self, pp):
-        while not pp.completed:
-            self.a_star_steps(pp)
-            # pp.tried_pins.add((pp.X[0], pp.X[1]))
-            # further_steps = self.next_steps(pp.current_x, pp.Y, pp.path, pp.tried_pins)
-            # for step in further_steps:
-            #     pp.pq.put(step)
-            # if pp.pq.qsize() == 0:
-            #     break
-            # step = pp.pq.get()
-            # pp.current_x = step.coords
-            # pp.path = step.path[:]
-            # if np.array_equal(pp.current_x, pp.Y):
-            #     pp.completed = True
-            # print(path)
-            # self.save_board(path)
-        return pp.path
-
     def update_playground(self, path, value):
         self.paths.append(path)
         for c in path:
@@ -155,6 +115,10 @@ class Playground:
             self.board[c] = value
             for n in self.get_neighbours(c):
                 self.invalid_nodes.add(n)
+
+    def a_star(self):
+        while not self.current_pp.completed:
+            self.a_star_steps(self.current_pp)
 
     def a_star_steps(self, pp):
         self.a_star_step(pp, 0)
@@ -243,27 +207,3 @@ class PointPair:
         # return self.d - 0.15 * self.center_d > other.d - 0.15 * other.center_d
         # other.center_d + 
         # and self.d > other.d
-
-
-def distance(v1, v2):
-    return np.sqrt(np.sum((v1 - v2) ** 2))
-
-
-def print_pretty_table(board, paths):
-    from prettytable import PrettyTable
-    x = PrettyTable()
-    x.field_names = [' '] + [i for i in range(board.shape[1])]
-    for row in range(board.shape[0]):
-        x.add_row([row] + [board[row, i] if board[row, i] != 0 else ' ' for i in range(board.shape[1])])
-    print(x)
-
-
-if __name__ == '__main__':
-    filepath = 'E:\\UBB\\Semester 6\\Stratec\\2020_Internship_Challenge_Software\\Step_One-2.csv'
-
-    playground = Playground(filepath)
-    playground.find_paths()
-
-    print('Finished')
-
-    print_pretty_table(playground.board, playground.paths)
