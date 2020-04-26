@@ -2,7 +2,7 @@ import numpy as np
 from queue import PriorityQueue
 import itertools
 
-from brute_force.printing_tools import print_pretty_table, distance
+from brute_force.extra_tools import distance
 
 
 class Playground:
