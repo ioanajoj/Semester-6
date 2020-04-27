@@ -106,18 +106,25 @@ class TableWidget(QWidget):
             item_x.setBackground(QBrush(QColor(137, 84, 222)))
             item_y = QTableWidgetItem(str(pin_pair.value))
             item_y.setBackground(QBrush(QColor(137, 84, 222)))
-            self.table.setItem(pin_pair.X[0], pin_pair.X[1], item_x)
-            self.table.setItem(pin_pair.Y[0], pin_pair.Y[1], item_y)
+            self.table.setItem(pin_pair.x[0], pin_pair.x[1], item_x)
+            self.table.setItem(pin_pair.y[0], pin_pair.y[1], item_y)
 
     def complete_path(self):
         if not self.playground.current_pp.completed:
             self.clean_path(self.playground.current_pp.path[0])
             self.clean_path(self.playground.current_pp.path[1])
-        else:
-            pp = self.playground.points_pq.pop()
-            self.playground.current_pp = pp
         self.playground.a_star()
         self.draw_path(self.playground.current_pp.final_path)
+
+    def next_step(self):
+        self.clean_path(self.playground.current_pp.path[0])
+        self.clean_path(self.playground.current_pp.path[1])
+        self.playground.go_one_step()
+        if self.playground.current_pp.completed:
+            self.draw_path(self.playground.current_pp.final_path)
+        else:
+            self.draw_path(self.playground.current_pp.path[0])
+            self.draw_path(self.playground.current_pp.path[1])
 
     def draw_path(self, path):
         if not path:
@@ -140,16 +147,6 @@ class TableWidget(QWidget):
                 self.table.item(coords[0], coords[1]).setBackground(QBrush(QColor(255, 255, 255)))
         self.table.resizeColumnsToContents()
         self.table.resizeRowsToContents()
-
-    def next_step(self):
-        self.clean_path(self.playground.current_pp.path[0])
-        self.clean_path(self.playground.current_pp.path[1])
-        self.playground.go_one_step()
-        if self.playground.current_pp.completed:
-            self.draw_path(self.playground.current_pp.final_path)
-        else:
-            self.draw_path(self.playground.current_pp.path[0])
-            self.draw_path(self.playground.current_pp.path[1])
 
 
 if __name__ == '__main__':
