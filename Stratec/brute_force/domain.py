@@ -22,6 +22,7 @@ class Playground:
         self.invalid_nodes = set()
         self.paths = []
         self.current_pp = None
+        self.aborted_pp = []
 
     def set_pp(self):
         """
@@ -34,10 +35,19 @@ class Playground:
         if len(self.points_pq):
             self.current_pp = self.points_pq.pop()
             return True
-        else:
-            return False
+        elif len(self.aborted_pp):
+            self.current_pp = self.aborted_pp.pop()
+            return True
+        return False
 
     def add_points(self, pair1, pair2):
+        """
+        Adds a new pair of points to the playground having value equal to next_value
+        Updates the board, points_pq and increments next_value
+        :param pair1: tuple (x-coordinate, y-coordinate)
+        :param pair2: tuple (x-coordinate, y-coordinate)
+        :return: void
+        """
         self.points_pq.append(PointPair(np.array(pair1), np.array(pair2), self.next_value, self.center))
         self.board[pair1] = self.next_value
         self.board[pair2] = self.next_value
@@ -90,6 +100,7 @@ class Playground:
         for pair in zip(*[iter(coordinates)] * 2):
             self.points_pq.append(PointPair(pair[0], pair[1], self.board[pair[0][0], pair[0][1]], self.center))
         self.points_pq.sort()
+        self.next_value = len(self.points_pq) + 1
 
     def get_neighbours(self, x):
         """
@@ -160,6 +171,14 @@ class Playground:
             counter += n in tried_pins
             if counter > 2:
                 return False
+        # 7. Check that the step is not redundant
+        if len(path) > 3:
+            last = path[-3:]
+            if last[-1][0] != point[0] and last[-1][1] != point[1]:
+                if last[-2][0] == point[0] and last[-3][0] == point[0]:
+                    return False
+                if last[-2][1] == point[1] and last[-3][1] == point[1]:
+                    return False
         return True
 
     def next_steps(self, y, path, tried_pins):
@@ -253,7 +272,9 @@ class Playground:
             pp.pq[index].put(step)
         if pp.pq[index].qsize() == 0:
             pp.completed = True
+            pp.aborted = True
             pp.final_path = [(pp.x[0], pp.x[1]), (pp.y[0], pp.y[1])]
+            self.aborted_pp.append(pp)
             return
         step = pp.pq[index].get()
         pp.current_point[index] = step.coords
@@ -273,7 +294,7 @@ class Step:
         self.combined_dist = (
                 distance(np.array(coords), np.array(y))
                 + distance(np.array(coords), np.array(x))
-            # - 0.75 * distance(np.array(coords), np.array([board_center[0], board_center[1]]))
+                - 0.50 * distance(np.array(coords), np.array([board_center[0], board_center[1]]))
         )
 
     def __str__(self):
@@ -308,14 +329,16 @@ class PointPair:
         self.current_point = [x, y]
         # points that were tried in the process of building the paths
         self.tried_pins = [set(), set()]
-        # flag: True if path is completed or aborted
+        # flag: True if path is completed
         self.completed = False
+        # flag: True if aborted
+        self.aborted = False
 
     def __lt__(self, other):
         """
         Prioritize the selection of pairs of points
         """
-        return self.d > other.d
-        # return self.d - 0.15 * self.center_d > other.d - 0.15 * other.center_d
+        # return self.d > other.d
+        return self.d - 0.15 * self.center_d > other.d - 0.15 * other.center_d
         # other.center_d + 
         # and self.d > other.d
