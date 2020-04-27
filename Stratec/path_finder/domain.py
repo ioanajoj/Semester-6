@@ -4,7 +4,7 @@ import numpy as np
 from queue import PriorityQueue
 import itertools
 
-from brute_force.extra_tools import distance
+from path_finder.extra_tools import distance
 
 
 class Playground:

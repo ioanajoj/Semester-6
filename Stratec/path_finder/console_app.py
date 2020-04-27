@@ -1,5 +1,5 @@
-from brute_force.domain import Playground
-from brute_force.extra_tools import print_pretty_table
+from path_finder.domain import Playground
+from path_finder.extra_tools import print_pretty_table
 
 filepath = '..\\2020_Internship_Challenge_Software\\Step_One-2.csv'
 

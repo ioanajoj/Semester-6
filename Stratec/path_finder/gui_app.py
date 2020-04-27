@@ -6,7 +6,7 @@ from PyQt5.QtGui import QColor, QBrush
 from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QGridLayout, QTableWidget, QTableWidgetItem, \
     QHeaderView, QPushButton, QVBoxLayout, QHBoxLayout, QFileDialog, QSpinBox, QMessageBox
 
-from brute_force.domain import Playground
+from path_finder.domain import Playground
 
 
 class StartWindow(QWidget):

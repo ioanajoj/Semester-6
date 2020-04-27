@@ -1,6 +1,6 @@
 import pytest
 
-from brute_force.domain import Playground
+from path_finder.domain import Playground
 
 filepath = '..\\2020_Internship_Challenge_Software\\Step_One.csv'
 
