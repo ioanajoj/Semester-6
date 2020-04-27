@@ -4,7 +4,7 @@ import numpy as np
 from queue import PriorityQueue
 import itertools
 
-from path_finder.extra_tools import distance
+from extra_tools import distance
 
 
 class Playground:
@@ -294,7 +294,7 @@ class Step:
         self.combined_dist = (
                 distance(np.array(coords), np.array(y))
                 + distance(np.array(coords), np.array(x))
-                - 0.50 * distance(np.array(coords), np.array([board_center[0], board_center[1]]))
+                - 0.25 * distance(np.array(coords), np.array([board_center[0], board_center[1]]))
         )
 
     def __str__(self):
@@ -340,5 +340,4 @@ class PointPair:
         """
         # return self.d > other.d
         return self.d - 0.15 * self.center_d > other.d - 0.15 * other.center_d
-        # other.center_d + 
-        # and self.d > other.d
+

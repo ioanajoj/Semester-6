@@ -6,7 +6,7 @@ from PyQt5.QtGui import QColor, QBrush
 from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QGridLayout, QTableWidget, QTableWidgetItem, \
     QHeaderView, QPushButton, QVBoxLayout, QHBoxLayout, QFileDialog, QSpinBox, QMessageBox
 
-from path_finder.domain import Playground
+from domain import Playground
 
 
 class StartWindow(QWidget):
@@ -266,8 +266,6 @@ class TableWidget(QWidget):
                               ':(',
                               'Please select two points in the table')
         else:
-            for index in self.table.selectedIndexes():
-                print(f'{index.row()} {index.column()}')
             self.playground.add_points(
                 (selected[0].row(), selected[0].column()),
                 (selected[1].row(), selected[1].column())
