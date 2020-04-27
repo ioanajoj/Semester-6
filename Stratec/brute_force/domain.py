@@ -1,3 +1,5 @@
+import re
+
 import numpy as np
 from queue import PriorityQueue
 import itertools
@@ -6,11 +8,16 @@ from brute_force.extra_tools import distance
 
 
 class Playground:
-    def __init__(self, filepath):
+    def __init__(self, filepath=None, shape=None):
         self.board = None
         self.center = None
         self.points_pq = []
-        self.load_file(filepath)
+        self.next_value = int(1)
+        if filepath:
+            self.load_file(filepath)
+        elif shape is not None:
+            self.board = np.zeros(shape)
+            self.center = (self.board.shape[0] // 2, self.board.shape[1] // 2)
 
         self.invalid_nodes = set()
         self.paths = []
@@ -30,6 +37,13 @@ class Playground:
         else:
             return False
 
+    def add_points(self, pair1, pair2):
+        self.points_pq.append(PointPair(np.array(pair1), np.array(pair2), self.next_value, self.center))
+        self.board[pair1] = self.next_value
+        self.board[pair2] = self.next_value
+        self.points_pq.sort()
+        self.next_value += 1
+
     def go_one_step(self):
         """
         Advance one step with the current PointPair
@@ -44,7 +58,7 @@ class Playground:
         :param filename: str
         :return: void
         """
-        np.savetxt(filename + '.csv', self.board.astype('int'), delimiter=",", fmt='%d')
+        np.savetxt(re.sub('.csv', '', filename) + '.csv', self.board.astype('int'), delimiter=",", fmt='%d')
 
     def find_paths(self):
         """
@@ -109,7 +123,7 @@ class Playground:
 
     def is_valid(self, point, path, tried_pins):
         """
-        CHeck validity of a point in the current board given the path in which it will be incorporated
+        Check validity of a point in the current board given the path in which it will be incorporated
         and the points that were formerly tried
         :param point: tuple (x-coordinate, y-coordinate)
         :param path: list of tuples (x-coordinate, y-coordinate) representing contiguous coordinates in the path
@@ -119,7 +133,10 @@ class Playground:
         # 1. Check that it is in the board
         if np.any(np.array(point) < 0) or np.any(np.array(point) >= self.board.shape):
             return False
-        # 2. Check that it is not between two orthogonally neighbouring pins having any va;ue other than 0
+        # 2. Check that it does not point to a pin with another value
+        if self.board[point] not in [0, self.board[path[0]]]:
+            return False
+        # 2. Check that it is not between two orthogonally neighbouring pins having any value other than 0
         neighbours = self.get_orthogonal_neighbours(point)
         pin_counter = 0
         for n in neighbours:
@@ -202,7 +219,7 @@ class Playground:
         y_limit = pp.path[1][-1]
         if distance(np.array(x_limit), np.array(y_limit)) == 2:
             if x_limit[0] == y_limit[0]:
-                pp.final_path = pp.path[0] + [(x_limit[0], x_limit[1] + 1)] + pp.path[1][::-1]
+                pp.final_path = pp.path[0] + [(x_limit[0], (x_limit[1] + y_limit[1]) // 2)] + pp.path[1][::-1]
                 pp.completed = True
                 self.update_playground(pp.final_path, pp.value)
             elif x_limit[1] == y_limit[1]:
