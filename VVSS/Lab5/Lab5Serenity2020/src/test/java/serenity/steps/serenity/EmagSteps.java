@@ -55,4 +55,14 @@ public class EmagSteps {
     public void filter_for() {
         emagResultPage.filter();
     }
+
+    @Step
+    public void check_filter_not_applied() {
+        emagResultPage.check_filter_not_applied();
+    }
+
+    @Step
+    public void check_filter_applied() throws InterruptedException {
+        emagResultPage.check_filter_applied();
+    }
 }

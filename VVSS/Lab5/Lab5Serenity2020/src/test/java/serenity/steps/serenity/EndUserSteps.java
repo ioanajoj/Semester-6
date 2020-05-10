@@ -3,6 +3,7 @@ package serenity.steps.serenity;
 import serenity.pages.DictionaryPage;
 import net.thucydides.core.annotations.Step;
 import net.thucydides.core.steps.ScenarioSteps;
+import serenity.pages.EmagResultPage;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -37,4 +38,5 @@ public class EndUserSteps {
         enters(term);
         starts_search();
     }
+
 }

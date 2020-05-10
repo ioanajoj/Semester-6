@@ -49,10 +49,12 @@ public class EmagWebAutomationTest {
     }
 
     @Test
-    public void filterTestDdt() {
+    public void filterTestDdt() throws InterruptedException {
         endUser.is_the_home_page();
         endUser.looks_for(getName());
+        endUser.check_filter_not_applied();
         endUser.filter_for();
+        endUser.check_filter_applied();
     }
 
     public String getName() {
