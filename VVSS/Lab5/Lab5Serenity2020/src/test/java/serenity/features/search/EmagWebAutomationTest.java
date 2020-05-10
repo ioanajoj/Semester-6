@@ -1,5 +1,8 @@
 package serenity.features.search;
 
+import net.serenitybdd.core.annotations.findby.FindBy;
+import net.serenitybdd.core.pages.WebElementFacade;
+import net.serenitybdd.junit.runners.SerenityParameterizedRunner;
 import net.serenitybdd.junit.runners.SerenityRunner;
 import net.thucydides.core.annotations.Managed;
 import net.thucydides.core.annotations.ManagedPages;
@@ -7,15 +10,17 @@ import net.thucydides.core.annotations.Steps;
 import net.thucydides.core.pages.Pages;
 import net.thucydides.junit.annotations.Qualifier;
 import net.thucydides.junit.annotations.UseTestDataFrom;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.openqa.selenium.WebDriver;
+import serenity.steps.serenity.EmagSteps;
 import serenity.steps.serenity.EndUserSteps;
 
 /**
  * @author joj on 5/10/2020
  **/
 
-@RunWith(SerenityRunner.class)
+@RunWith(SerenityParameterizedRunner.class)
 @UseTestDataFrom("src/test/resources/EmagTestData.csv")
 public class EmagWebAutomationTest {
 
@@ -34,7 +39,21 @@ public class EmagWebAutomationTest {
     }
 
     @Steps
-    public EndUserSteps endUser;
+    public EmagSteps endUser;
+
+    @Test
+    public void searchWikiByKeywordTestDDT() {
+        endUser.is_the_home_page();
+        endUser.looks_for(getName());
+        endUser.should_see_definition(getDefinition());
+    }
+
+    @Test
+    public void filterTestDdt() {
+        endUser.is_the_home_page();
+        endUser.looks_for(getName());
+        endUser.filter_for();
+    }
 
     public String getName() {
         return name;
