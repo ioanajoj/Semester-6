@@ -1,0 +1,16 @@
+function Runge(n)
+	clf; hold on; axis equal; grid on;
+	f=@(x) 1./(1+25*x.^2);
+	fplot(f, [-1,1]);
+
+	nodes=linspace(-1,1,n);
+	values=f(nodes)
+	plot(nodes, values, 'ok');
+
+	LX=@(x) LagrangeBary(nodes, balues, x);
+	flpot(Lx, [-1,1], '--r','LineWidth',3)
+
+
+
+endfunction
+
