@@ -12,7 +12,7 @@ error=norm(temperature-f(time));
 disp("Error:"), disp(error)
 
 coefs_lsq=polyfit(time,temperature,1);
-disp(coefs_lsq);
+disp("Coeffs:"), disp(coefs_lsq);
 poly_lsq=@(x) polyval(coefs_lsq,x);
 
 % predict temperature at 8 o'clock

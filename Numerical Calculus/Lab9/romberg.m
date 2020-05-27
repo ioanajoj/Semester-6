@@ -1,4 +1,4 @@
-﻿function T = romberg(f, a, b, n)
+function T = romberg(f, a, b, n)
     T = nan(n);
     T(1,1) = reptrap(f,a,b,1);
     for i = 2:n
